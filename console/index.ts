@@ -2,7 +2,7 @@ import { Wallet, ethers } from "ethers";
 import { config } from "dotenv";
 
 async function main() {
-  config();
+  config({ path: "../.env" });
 
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   //const wallet = new Wallet(process.env.PK!, provider);

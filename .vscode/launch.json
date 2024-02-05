@@ -5,7 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch via NPM",
+            "name": "Attach to Chrome",
+            "request": "launch",
+            "type": "chrome",
+            "url": "http://localhost:3001",
+            "webRoot": "${workspaceFolder}/react",
+        },
+        {
+            "name": "Console",
             "request": "launch",
             "runtimeArgs": [
                 "start"
@@ -14,7 +21,8 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "cwd": "${workspaceFolder}/console",
             "type": "node"
-        }
+        },
     ]
 }
