@@ -1,5 +1,8 @@
-# TypeScript app for Ethereum experiments
+# ERC2612 concept demo
 
-I decided to create this boilerplate to make Ethereum-related experiments.
+To customize:
 
-It consists of console app (that can be transformed into backend/api), and React app with "Connect wallet" functionality.
+- Copy `.env.example` to `.env` and put your parameters there.
+- Set required `spenderAddress` in `react/constants.ts`
+- For both projects `console` and `react` do
+  - `npm i` then `npm start`

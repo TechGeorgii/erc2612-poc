@@ -1,29 +1,72 @@
 import { Wallet, ethers } from "ethers";
+import express, { Express, Request, Response } from "express";
 import { config } from "dotenv";
+import * as constants from "../react/src/constants";
+import * as dto from "../react/src/dto";
+import USDC_abi from "../react/src/USDC_abi.json";
 
-async function main() {
-  config({ path: "../.env" });
+config({ path: "../.env" });
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+const wallet = new Wallet(process.env.PK!, provider);
 
-  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-  //const wallet = new Wallet(process.env.PK!, provider);
+const app: Express = express();
+const port = process.env.PORT || 3001;
 
-  const abi = [
-    "function decimals() view returns (string)",
-    "function symbol() view returns (string)",
-    "function balanceOf(address addr) view returns (uint)",
-  ];
+app.use(express.json());
 
-  const usdtContract = new ethers.Contract(
-    "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", // Polygon mainnet
-    abi,
-    provider
-  );
+app.all("/*", function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3001");
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header(`Access-Control-Allow-Methods`, `GET,PUT,POST,DELETE`);
+  res.header(`Access-Control-Allow-Headers`, `Content-Type`);
+  next();
+});
 
-  const bal = await usdtContract.balanceOf("0x....");
+app.post("/permit", async (req: Request, res: Response) => {
+  const inp = req.body as dto.PermitDto;
 
-  console.log(bal);
-}
+  try {
+    const splitted = ethers.Signature.from(inp.signature);
+    const ownerAddress = ethers.verifyTypedData(
+      inp.domain,
+      constants.permitTypes,
+      inp.values,
+      splitted
+    );
+    if (ownerAddress != inp.values.owner) {
+      throw new Error("Signature is not for needed address");
+    }
 
-main().catch((error) => {
-  console.error("Error:", error);
+    const usdcContract = new ethers.Contract(
+      constants.usdcAddress,
+      USDC_abi,
+      wallet
+    );
+
+    const tx = await usdcContract.permit(
+      ownerAddress,
+      constants.spenderAddress,
+      inp.values.value,
+      inp.values.deadline,
+      splitted.v,
+      splitted.r,
+      splitted.s,
+      {
+        gasLimit: 170000,
+      }
+    );
+
+    console.log(tx);
+    tx.wait();
+    if (tx.hash) console.log(tx.hash);
+
+    res.status(200).send(req.body);
+  } catch (err) {
+    res.status(500).send({ error: "" + (err ?? "") });
+    console.error(err);
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
 });
