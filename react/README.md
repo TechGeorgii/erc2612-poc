@@ -1,0 +1,1 @@
+Before using please set `spenderAddress` in `src/constants.ts` to smart contract you want give an approve.
