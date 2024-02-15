@@ -27,15 +27,18 @@ app.post("/permit", async (req: Request, res: Response) => {
 
   try {
     const splitted = ethers.Signature.from(inp.signature);
-    const ownerAddress = ethers.verifyTypedData(
-      inp.domain,
-      constants.permitTypes,
-      inp.values,
-      splitted
-    );
-    if (ownerAddress != inp.values.owner) {
-      throw new Error("Signature is not for needed address");
-    }
+
+    // this is not mandatory to check here, will be checked by smart contract's <permit> function.
+
+    // const ownerAddress = ethers.verifyTypedData(
+    //   inp.domain,
+    //   constants.permitTypes,
+    //   inp.values,
+    //   splitted
+    // );
+    // if (ownerAddress != inp.values.owner) {
+    //   throw new Error("Signature is not for needed address");
+    // }
 
     const usdcContract = new ethers.Contract(
       constants.usdcAddress,
@@ -44,7 +47,7 @@ app.post("/permit", async (req: Request, res: Response) => {
     );
 
     const tx = await usdcContract.permit(
-      ownerAddress,
+      inp.values.owner,
       constants.spenderAddress,
       inp.values.value,
       inp.values.deadline,
