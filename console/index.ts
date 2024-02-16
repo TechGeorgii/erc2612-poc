@@ -3,7 +3,7 @@ import express, { Express, Request, Response } from "express";
 import { config } from "dotenv";
 import * as constants from "../react/src/constants";
 import * as dto from "../react/src/dto";
-import USDC_abi from "../react/src/USDC_abi.json";
+import USDC_abi from "../react/src/ABI.json";
 
 config({ path: "../.env" });
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
@@ -29,7 +29,6 @@ app.post("/permit", async (req: Request, res: Response) => {
     const splitted = ethers.Signature.from(inp.signature);
 
     // this is not mandatory to check here, will be checked by smart contract's <permit> function.
-
     // const ownerAddress = ethers.verifyTypedData(
     //   inp.domain,
     //   constants.permitTypes,
@@ -40,13 +39,13 @@ app.post("/permit", async (req: Request, res: Response) => {
     //   throw new Error("Signature is not for needed address");
     // }
 
-    const usdcContract = new ethers.Contract(
-      constants.usdcAddress,
+    const tokenContract = new ethers.Contract(
+      constants.tokenAddress,
       USDC_abi,
       wallet
     );
 
-    const tx = await usdcContract.permit(
+    const tx = await tokenContract.permit(
       inp.values.owner,
       constants.spenderAddress,
       inp.values.value,

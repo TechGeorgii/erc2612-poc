@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { useEffect, useRef, useState } from 'react';
-import USDC_abi from './USDC_abi.json'
+import USDC_abi from './ABI.json'
 import * as constants from './constants'
 import { DomainDto, PermitDto, ValuesDto } from "./dto";
 
@@ -12,6 +12,7 @@ function App() {
   const [eoaAddress, setEoaAddress] = useState<string | null>(null);
   const [successPermit, setSuccessPermit] = useState<boolean>(false);
   const [allowance, setAllowance] = useState<string | null>(null);
+  const [network, setNetwork] = useState<string | null>(null);
   const provider = useRef<ethers.BrowserProvider>();
   const signer = useRef<ethers.Signer>();
 
@@ -21,6 +22,7 @@ function App() {
         provider.current = new ethers.BrowserProvider((window as any).ethereum);
         signer.current = await provider.current.getSigner();
         setEoaAddress(await signer.current.getAddress());
+        setNetwork((await provider.current?.getNetwork()).name);
 
         await provider.current.send("eth_requestAccounts", []);
       }
@@ -35,14 +37,18 @@ function App() {
   const sendPermit = async () => {
     setSuccessPermit(false);
 
-    const usdcContract = new ethers.Contract(constants.usdcAddress, USDC_abi, provider.current);
+    const tokenContract = new ethers.Contract(constants.tokenAddress, USDC_abi, provider.current);
     const [network, decimals, nonce, name, version] = await Promise.all([
       provider.current?.getNetwork(),
-      usdcContract.decimals(),
-      usdcContract.nonces(eoaAddress),
-      usdcContract.name(),
-      usdcContract.version()
+      tokenContract.decimals(),
+      tokenContract.nonces(eoaAddress),
+      tokenContract.name(),
+      tokenContract.version()
+      // "1"// Hardcoded – for OP Optimism: 1, FXS Optimism: 1
+      // for stETH Mainnet – supports EIP-5267, so one can get all domain parameters in one call (not in this code)
     ]);
+
+    //const version = "1";  
     console.log(``)
     console.log(`contract name: ${name}`);
 
@@ -57,7 +63,7 @@ function App() {
     const domain: DomainDto = {
       chainId: network!.chainId,
       name: name,
-      verifyingContract: constants.usdcAddress,
+      verifyingContract: constants.tokenAddress,
       version: version,
     };
 
@@ -77,7 +83,7 @@ function App() {
 
   const checkAllowanceClick = async () => {
     setAllowance(null);
-    const usdcContract = new ethers.Contract(constants.usdcAddress, USDC_abi, provider.current);
+    const usdcContract = new ethers.Contract(constants.tokenAddress, USDC_abi, provider.current);
     const [a, decimals] = await Promise.all([
       usdcContract.allowance(eoaAddress, constants.spenderAddress),
       usdcContract.decimals()
@@ -95,8 +101,12 @@ function App() {
           <>
             {eoaAddress ? (
               <div>
-                Connected: {eoaAddress}
-
+                <div>
+                  Connected: {eoaAddress} on {network}
+                </div>
+                <div>
+                  Token: {constants.tokenAddress}
+                </div>
                 <div>
                   <button onClick={sendPermit}>Send permit</button>
                   {successPermit ? "Successfully completed" : ""}
